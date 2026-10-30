@@ -123,120 +123,123 @@ if uploaded_file is not None and resume_text.strip():
 
     resume_features = resume_tfidf.transform([resume_text])
     predicted_category = classifier.predict(resume_features)[0]
-    
+
     st.subheader("🎓 Predicted Job Category")
     st.success(predicted_category)
-if uploaded_file is not None and resume_text.strip():
+
     resume_lower = resume_text.lower()
 
-resume_job_vector = job_tfidf.transform([resume_text])
+    resume_job_vector = job_tfidf.transform([resume_text])
 
-job_similarities = cosine_similarity(
-    resume_job_vector,
-    job_tfidf.transform(jobs["Job_Text"])
-).flatten()
-hybrid_scores = []
+    job_similarities = cosine_similarity(
+        resume_job_vector,
+        job_tfidf.transform(jobs["Job_Text"])
+    ).flatten()
 
-category_keywords = {
-    "Data Science": [
-        "data scientist", "data science", "machine learning engineer",
-        "data analyst", "analytics engineer", "statistician", "ai engineer"
-    ],
-    "Python Developer": ["python developer", "python engineer", "django developer"],
-    "Java Developer": ["java developer", "java engineer"],
-    "Automation Testing": ["automation testing", "test automation", "qa automation"],
-    "Business Analyst": ["business analyst", "business analysis"],
-    "Database": ["database administrator", "database developer", "sql developer"],
-    "DevOps Engineer": ["devops", "site reliability", "cloud engineer", "platform engineer"],
-    "Web Designing": ["web designer", "web design", "ui designer", "ux designer"],
-    "Electrical Engineering": ["electrical engineer", "electrical engineering"],
-    "Mechanical Engineer": ["mechanical engineer", "mechanical design engineer"],
-    "Civil Engineer": ["civil engineer", "structural engineer"],
-    "Blockchain": ["blockchain", "web3", "smart contract"],
-    "Hadoop": ["hadoop", "big data engineer", "spark engineer"],
-    "ETL Developer": ["etl developer", "data integration"],
-    "Network Security Engineer": ["network security", "cybersecurity", "security engineer"],
-    "DotNet Developer": ["dotnet developer", ".net developer", "asp.net developer"],
-    "SAP Developer": ["sap developer", "sap consultant", "sap abap"],
-    "Testing": ["software tester", "test engineer", "quality assurance"],
-    "Advocate": ["lawyer", "advocate", "attorney", "legal counsel"],
-    "Arts": ["artist", "illustrator", "graphic designer"],
-    "HR": ["human resources", "hr manager", "recruiter"],
-    "Sales": ["sales representative", "sales manager", "account executive"],
-    "Operations Manager": ["operations manager", "operations director"],
-    "PMO": ["project management office", "pmo", "program manager"],
-    "Health and fitness": ["fitness trainer", "personal trainer", "health coach"]
-}
+    hybrid_scores = []
 
-known_skills = [
-    "machine learning", "deep learning",
-    "natural language processing", "artificial intelligence",
-    "data analysis", "data mining", "data science",
-    "information retrieval", "pattern recognition",
-    "web services", "core java", "javascript",
-    "python", "java", "sql", "nosql", "c++",
-    "hadoop", "hbase", "linux", "angular", "django",
-    "html", "css", "git", "android", "mysql",
-    "pl sql", "pyspark", "pandas", "numpy",
-    "scikit-learn", "tensorflow", "pytorch"
-]
+    category_keywords = {
+        "Data Science": [
+            "data scientist", "data science", "machine learning engineer",
+            "data analyst", "analytics engineer", "statistician", "ai engineer"
+        ],
+        "Python Developer": ["python developer", "python engineer", "django developer"],
+        "Java Developer": ["java developer", "java engineer"],
+        "Automation Testing": ["automation testing", "test automation", "qa automation"],
+        "Business Analyst": ["business analyst", "business analysis"],
+        "Database": ["database administrator", "database developer", "sql developer"],
+        "DevOps Engineer": ["devops", "site reliability", "cloud engineer", "platform engineer"],
+        "Web Designing": ["web designer", "web design", "ui designer", "ux designer"],
+        "Electrical Engineering": ["electrical engineer", "electrical engineering"],
+        "Mechanical Engineer": ["mechanical engineer", "mechanical design engineer"],
+        "Civil Engineer": ["civil engineer", "structural engineer"],
+        "Blockchain": ["blockchain", "web3", "smart contract"],
+        "Hadoop": ["hadoop", "big data engineer", "spark engineer"],
+        "ETL Developer": ["etl developer", "data integration"],
+        "Network Security Engineer": ["network security", "cybersecurity", "security engineer"],
+        "DotNet Developer": ["dotnet developer", ".net developer", "asp.net developer"],
+        "SAP Developer": ["sap developer", "sap consultant", "sap abap"],
+        "Testing": ["software tester", "test engineer", "quality assurance"],
+        "Advocate": ["lawyer", "advocate", "attorney", "legal counsel"],
+        "Arts": ["artist", "illustrator", "graphic designer"],
+        "HR": ["human resources", "hr manager", "recruiter"],
+        "Sales": ["sales representative", "sales manager", "account executive"],
+        "Operations Manager": ["operations manager", "operations director"],
+        "PMO": ["project management office", "pmo", "program manager"],
+        "Health and fitness": ["fitness trainer", "personal trainer", "health coach"]
+    }
 
-for index in range(len(jobs)):
-    text_score = job_similarities[index]
-    skills = str(jobs.iloc[index]["Required Skills"]).lower()
-
-    job_skills = [
-        skill for skill in known_skills
-        if re.search(r"(?<!\w)" + re.escape(skill) + r"(?!\w)", skills)
+    known_skills = [
+        "machine learning", "deep learning",
+        "natural language processing", "artificial intelligence",
+        "data analysis", "data mining", "data science",
+        "information retrieval", "pattern recognition",
+        "web services", "core java", "javascript",
+        "python", "java", "sql", "nosql", "c++",
+        "hadoop", "hbase", "linux", "angular", "django",
+        "html", "css", "git", "android", "mysql",
+        "pl sql", "pyspark", "pandas", "numpy",
+        "scikit-learn", "tensorflow", "pytorch"
     ]
 
-    matched_skills = [
-        skill for skill in job_skills
-        if re.search(
-            r"(?<!\w)" + re.escape(skill) + r"(?!\w)",
-            resume_lower
+    for index in range(len(jobs)):
+        text_score = job_similarities[index]
+        skills = str(jobs.iloc[index]["Required Skills"]).lower()
+
+        job_skills = [
+            skill for skill in known_skills
+            if re.search(r"(?<!\w)" + re.escape(skill) + r"(?!\w)", skills)
+        ]
+
+        matched_skills = [
+            skill for skill in job_skills
+            if re.search(
+                r"(?<!\w)" + re.escape(skill) + r"(?!\w)",
+                resume_lower
+            )
+        ]
+
+        if job_skills:
+            skill_score = len(matched_skills) / len(job_skills)
+        else:
+            skill_score = 0
+
+        job_title = str(jobs.iloc[index]["Job Title"]).lower()
+
+        category_terms = category_keywords.get(
+            predicted_category, [predicted_category.lower()]
         )
-    ]
+        category_score = float(
+            any(term in job_title for term in category_terms)
+        )
 
-    if job_skills:
-        skill_score = len(matched_skills) / len(job_skills)
-    else:
-        skill_score = 0
+        hybrid_score = (
+            0.55 * text_score
+            + 0.25 * skill_score
+            + 0.20 * category_score
+        )
 
-    job_title = str(jobs.iloc[index]["Job Title"]).lower()
-    category_terms = category_keywords.get(
-        predicted_category, [predicted_category.lower()]
-    )
-    category_score = float(
-        any(term in job_title for term in category_terms)
-    )
+        hybrid_scores.append(hybrid_score)
 
-    hybrid_score = (
-        0.55 * text_score
-        + 0.25 * skill_score
-        + 0.20 * category_score
-    )
-    hybrid_scores.append(hybrid_score)
+    hybrid_scores = pd.Series(hybrid_scores)
+    top_job_indices = hybrid_scores.nlargest(5).index
 
-hybrid_scores = pd.Series(hybrid_scores)
-top_job_indices = hybrid_scores.nlargest(5).index
-
-st.subheader("💼 Top 5 Recommended Jobs")
-for rank, index in enumerate(top_job_indices, start=1):
+    st.subheader("💼 Top 5 Recommended Jobs")
+    for rank, index in enumerate(top_job_indices, start=1):
         job = jobs.iloc[index]
         st.write( f"**{rank}. {job['Job Title']}** — " f"{job['Company']} | {job['Location']}" )
         st.write( f"SmartMatch Score: **{hybrid_scores[index] * 100:.2f}%**" )
         st.write( f"Required Skills: {job['Required Skills']}" )
         st.divider()
-    
+
 if uploaded_file is not None and resume_text.strip():
 
     resume_lower = resume_text.lower()
     print("DEBUG resume text:", resume_lower[:500])
-   
+
     recommended_jobs = jobs.iloc[top_job_indices]
 
-    
+
     import re
 
     skill_vocabulary = [
